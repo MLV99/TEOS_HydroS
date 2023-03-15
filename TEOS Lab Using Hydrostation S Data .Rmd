@@ -6,6 +6,8 @@ output:
   prettydoc::html_pretty:
     theme: tactile
     highlight: vignette
+    
+    
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}
@@ -58,7 +60,7 @@ Anom1  = Oxy Anomaly-1 (umol/kg)
 ```
 
 ## Plots: 
-```{r, fig.cap= "Figure 1. Clear season signal is observed for sigma-theta" }
+```{r, fig.cap= "Figure 1. Clear seasonal signal is observed for sigma-theta" }
 
 hydrostation_bottle %>% 
   filter(`Sig-th` !=-999 & Depth <20) %>% #filter out -999, no data flag and depth for better visual
@@ -212,13 +214,9 @@ HydroS %>%
 ### Identify and Fix Error: 
 
 ```{r}
-
-#FOR HW 
-
-#Low sig-th-gsw point
-HydroS %>% 
-  filter(Sig_th_gsw<0) %>% 
-  View()#Sal1 too low, caused low sig-th-gsw calculation 
+HydroS %>% #Low sig-th-gsw point
+  filter(Sig_th_gsw<0)
+ #Sal1 too low, caused low sig-th-gsw calculation 
 
 #Calculate Sig-th-gsw with CTD_S instead of Sal1 for outlier point 
 HydroS_correctedS_a=  
@@ -242,3 +240,90 @@ HydroS_corrected %>%
 
 # HW: Fix binded data section - add to previous version of HydroS variable 
 instead of having two data frames and combining them 
+
+```{r}
+
+HydroS_corrected %>% 
+  
+  ggplot()+
+
+  geom_point(aes(x=Sig_th_gsw,y=Depth))+
+
+  scale_y_reverse()+
+
+  scale_x_continuous(position="top")+
+
+  xlab(expression(paste(sigma[theta]," (kg m"^"-3",")")))+
+
+  ylab("Depth (m)")+
+
+  theme_classic()
+```
+
+## Has surface sigma theta decreased over time? 
+
+```{r}
+HydroS_shallow = HydroS_corrected %>% 
+
+                 filter(Depth<30)#shallow 
+
+?lm #linear models
+
+#lm(y~x,data=data)
+
+lm(Sig_th_gsw~decy,data=HydroS_shallow)
+#lm(formula, data)
+#response~terms -> Y~X
+
+#y=mx+b
+
+#y = Sig_th_gsw
+
+#x = decy
+
+#coefficients: intercept = b, decy = m
+
+#Sig_th_gsw = -0.004*decy + 33.4
+
+#(kg/m^3) = (kg/m^3/y)*y + (kg/m^3)
+
+sig_theta_time_model=lm(Sig_th_gsw~decy,data=HydroS_shallow)
+
+summary(sig_theta_time_model)
+```
+
+## Plotly - Interactive Plot for HydroS_shallow data
+
+```{r}
+library(plotly)
+
+plot=HydroS_shallow %>% 
+
+  ggplot(aes(x=decy,y=Sig_th_gsw))+
+
+  geom_point()+
+
+  geom_line()+
+
+  geom_smooth(method="lm")+
+#aids in overplotting visualization 
+  
+  theme_classic()
+
+ggplotly(plot)
+```
+
+Sigma theta values do change over time. The regression line slightly decreases from 1960 to 2020
+
+
+# Lab Assignment 
+
+1. Pick a question (include hypothesis)
+  - Will distinct regions of the ocean influence changes in sigma theta values?
+  OR
+  - How do temperature, salinity, and sigma-theta co-vary with depth over time?
+  
+2. Produce a plot and a statistical summary using lm()
+3. Describe your results, the summary, and answer the question
+4. Compile into a completed lab report using R Markdown
+
