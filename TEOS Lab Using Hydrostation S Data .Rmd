@@ -35,7 +35,6 @@ hydrostation_bottle_names <- read_csv("hydrostation_bottle.txt",
 
 colnames(hydrostation_bottle)=colnames(hydrostation_bottle_names)
 
-view(hydrostation_bottle)
 ```
 
 # Variable Names and Units: 
@@ -238,9 +237,6 @@ HydroS_corrected %>%
 ```
 
 
-# HW: Fix binded data section - add to previous version of HydroS variable 
-instead of having two data frames and combining them 
-
 ```{r}
 
 HydroS_corrected %>% 
@@ -260,7 +256,7 @@ HydroS_corrected %>%
   theme_classic()
 ```
 
-## Has surface sigma theta decreased over time? 
+## Linear Models - Has surface sigma theta decreased over time? 
 
 ```{r}
 HydroS_shallow = HydroS_corrected %>% 
@@ -294,7 +290,7 @@ summary(sig_theta_time_model)
 
 ## Plotly - Interactive Plot for HydroS_shallow data
 
-```{r}
+```{r, message =FALSE, warning = FALSE}
 library(plotly)
 
 plot=HydroS_shallow %>% 
@@ -316,14 +312,92 @@ ggplotly(plot)
 Sigma theta values do change over time. The regression line slightly decreases from 1960 to 2020
 
 
+
+
+
+## Seanonal Variability of Sigma-Theta Values Plot 
+
+Winter months in Bermuda: December - March, while summer months are from August through October. 
+
+```{r, warning= FALSE}
+HydroS_seasons=
+  HydroS_corrected %>% 
+  mutate(month=as.numeric(substr(yyyymmd, 5, 6 ))) %>% 
+mutate(season=ifelse(month==12|| month==1| month==2| month==3, 'winter',
+                               ifelse(month==8|month==9|month==10,'summer','')))
+
+summary(lm(`O2(1)`~season,data=HydroS_seasons))
+```
+
+Questions: 
+
+- Is dissolved O2 higher in summer than winter? 
+- Is salinity higher in summer than winter?
+- Is sound speed higher?
+
+
 # Lab Assignment 
 
 1. Pick a question (include hypothesis)
-  - Will distinct regions of the ocean influence changes in sigma theta values?
-  OR
-  - How do temperature, salinity, and sigma-theta co-vary with depth over time?
+  
+  - Q: How does temperature and salinity co-vary over time?
+  - H: As time passes, both temperature and salinity parameters will experience variability. 
+  
   
 2. Produce a plot and a statistical summary using lm()
 3. Describe your results, the summary, and answer the question
 4. Compile into a completed lab report using R Markdown
+
+
+## Q: How does temperature and salinity co-vary over time? 
+
+### Temperature variability over time 
+Code:
+
+```{r, warning=FALSE} 
+HydroS_shallow=
+  HydroS_corrected %>% 
+  filter(Depth<50) 
+
+HydroS_shallow %>% 
+  ggplot(aes(x=decy, y=T_cons_gsw))+
+  geom_line()+
+  geom_smooth(method=lm, color = "red")+
+  xlab('Year')+
+  ylab('Temperature (C)')+
+theme_classic()
+```
+
+## Applied linear model regression
+
+```{r}
+lm(T_cons_gsw~decy,data=HydroS_shallow)
+temp_time_model=lm(T_cons_gsw~decy,data=HydroS_shallow)
+
+summary(temp_time_model)
+
+```
+
+### Salinity variability over time 
+Code:
+```{r}
+HydroS_shallow %>% 
+  ggplot(aes(x=decy, y=S_abs_gsw))+
+  geom_line()+
+   geom_smooth(method=lm, color = "red")+
+  xlab('Year')+
+  ylab('Salinity')+
+theme_classic()
+
+```
+
+## Applied linear model regression
+```{r}
+sal_time_model=lm(S_abs_gsw~decy,data=HydroS_shallow)
+summary(sal_time_model)
+```
+
+## Discussion - Temperature and Salinity Variability Over Time 
+
+Overall, both measured variables of temperature and salinity collected from Hydrostation S increase in shallow waters above 50 meters over time (1960 - 2020). To observe the relationship of temperature vs time and salinity vs time, the data required a linear model transformation. For this, the lm function R was applied. As a result, residual analysis and statistical summaries were generated for establishing a linear relationship of the plotted variables. However, there are observed differences in the slope and therefore the overall relationship between the studied parameters. The regression line exerted for the temperature variability in shallow depths is steeper than the line denoted for salinity variability. Consequently, we can debate that temperature has a stronger relationship and therefore presents greater change over time.   
 
